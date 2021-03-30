@@ -83,9 +83,9 @@ for iteration in range(1000):
     # plot
     if iteration % 20 == 0:
 
-        mask = y_pred.ge(0.5).float().squeeze()  # 以0.5为阈值进行分类
-        correct = (mask == train_y).sum()  # 计算正确预测的样本个数
-        acc = correct.item() / train_y.size(0)  # 计算分类准确率
+        mask = y_pred.ge(0.5).float().squeeze()  # threshold value for classification is 0.5
+        correct = (mask == train_y).sum()  # count the accurate prediction
+        acc = correct.item() / train_y.size()[0]  # calculate the accuracy
 
         plt.scatter(x0.data.numpy()[:, 0], x0.data.numpy()[:, 1], c='r', label='class 0')
         plt.scatter(x1.data.numpy()[:, 0], x1.data.numpy()[:, 1], c='b', label='class 1')

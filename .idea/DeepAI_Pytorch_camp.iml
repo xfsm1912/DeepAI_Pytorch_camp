@@ -5,4 +5,12 @@
     <orderEntry type="jdk" jdkName="Python 3.8 (lifeq_research_pwf_resnext)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
+  <component name="PyNamespacePackagesService">
+    <option name="namespacePackageFolders">
+      <list>
+        <option value="$MODULE_DIR$/model" />
+        <option value="$MODULE_DIR$/tools" />
+      </list>
+    </option>
+  </component>
 </module>
