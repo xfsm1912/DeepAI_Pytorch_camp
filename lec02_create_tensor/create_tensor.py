@@ -78,7 +78,8 @@ flag = False
 # flag = True
 
 if flag:
-    t = torch.full((3, 3), 1)
+    # Notice: after version of 1.6, need to input float value if not setup dtype
+    t = torch.full((3, 3), 1.)
     t2 = torch.full((3, 3), 2)
     print(t)
     print(t2)

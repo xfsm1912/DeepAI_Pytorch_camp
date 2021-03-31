@@ -43,7 +43,7 @@ for iteration in range(1000):
 
     # plot
     if iteration % 20 == 0:
-
+        plt.cla() # avoid the model is overlapped in visualization for PyCharm community version
         plt.scatter(x.data.numpy(), y.data.numpy())
         plt.plot(x.data.numpy(), y_pred.data.numpy(), 'r-', lw=5)
         plt.text(2, 20, 'Loss=%.4f' % loss.data.numpy(), fontdict={'size': 20, 'color':  'red'})
@@ -54,3 +54,4 @@ for iteration in range(1000):
 
         if loss.data.numpy() < 1:
             break
+    plt.show()

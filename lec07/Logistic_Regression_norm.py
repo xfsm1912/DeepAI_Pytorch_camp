@@ -11,26 +11,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 torch.manual_seed(10)
 
-lr = 0.01  # 学习率
+lr = 0.01  # learning rate
 
-# 生成虚拟数据
+# data generation
 sample_nums = 100
 mean_value = 1.7
 bias = 5         # 5
 n_data = torch.ones(sample_nums, 2)
 # class 0, data: shape=(100, 2)
 # class 0, label: shape=(100, 1)
-x0 = torch.normal(mean_value * n_data, 1) + bias      # 类别0 数据 shape=(100, 2)
-# y0 = torch.zeros(sample_nums)                         # 类别0 标签 shape=(100, 1)
-y0 = torch.zeros((sample_nums, 1))                         # 类别0 标签 shape=(100, 1)
-x1 = torch.normal(-mean_value * n_data, 1) + bias     # 类别1 数据 shape=(100, 2)
-# y1 = torch.ones(sample_nums)                            # 类别1 标签 shape=(100, 1)
-y1 = torch.ones((sample_nums, 1))                            # 类别1 标签 shape=(100, 1)
+x0 = torch.normal(mean_value * n_data, 1) + bias
+# class 0, label: shape=(100)
+# y0 = torch.zeros(sample_nums)
+y0 = torch.zeros((sample_nums, 1))
+x1 = torch.normal(-mean_value * n_data, 1) + bias
+# y1 = torch.ones(sample_nums)
+y1 = torch.ones((sample_nums, 1))
 train_x = torch.cat((x0, x1), 0)
 train_y = torch.cat((y0, y1), 0)
 
 
-# 定义模型
+# model
 class LR(nn.Module):
     def __init__(self):
         super(LR, self).__init__()
@@ -45,16 +46,16 @@ class LR(nn.Module):
 
 lr_net = LR()
 
-# 定义损失函数与优化器
+# loss function and optimizer
 loss_fn = nn.BCELoss()
 optimizer = torch.optim.SGD(lr_net.parameters(), lr=0.01, momentum=0.9)
 
 for iteration in range(1000):
 
-    # 前向传播
+    # forward propagation
     y_pred = lr_net(train_x)
 
-    # 计算 MSE loss
+    # MSE loss
     # if y0 = torch.zeros(sample_nums)
     # loss = loss_fn(y_pred, train_y.unsqueeze(1))
     # if y0 = torch.zeros((sample_nums, 1))
@@ -65,16 +66,16 @@ for iteration in range(1000):
     Please ensure they have the same size.
     """
 
-    # 反向传播
+    # back propagation
     loss.backward()
 
-    # 更新参数
+    # update weights
     optimizer.step()
 
-    # 清空梯度
+    # clear gradient
     optimizer.zero_grad()
 
-    # 绘图
+    # plot learning curve
     if iteration % 40 == 0:
         plt.clf()
 

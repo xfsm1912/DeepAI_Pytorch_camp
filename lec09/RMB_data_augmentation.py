@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-# @file name  : train_lenet.py
+# @file name  : RMB_data_augmentation.py
 # @author     : Jianhua Ma
-# @date       : 20210329
-# @brief      : RMB classification model training
+# @date       : 20210330
+# @brief      : Based on lec06/train_lenet.py, add the data augmentation.
 """
 
 import os
@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 import sys
 from model.lenet import LeNet
 from tools.my_dataset import RMBDataset
-from tools.common_tools import set_seed
+from tools.common_tools import set_seed, transform_invert
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -51,10 +51,11 @@ valid_dir = os.path.join(split_dir, "valid")
 norm_mean = [0.485, 0.456, 0.406]
 norm_std = [0.229, 0.224, 0.225]
 
-# compose multiple image transform
+# add the data augmentation: transforms.RandomGrayscale(p=0.9)
 train_transform = transforms.Compose([
     transforms.Resize((32, 32)),
     transforms.RandomCrop(32, padding=4),
+    transforms.RandomGrayscale(p=0.9),
     transforms.ToTensor(),
     transforms.Normalize(norm_mean, norm_std),
 ])
@@ -188,3 +189,12 @@ plt.show()
 #
 #     rmb = 1 if predicted.numpy()[0] == 0 else 100
 #     print("model predict {} yuan".format(rmb))
+
+#     img_tensor = inputs[0, ...]  # C H W
+#     img = transform_invert(img_tensor, train_transform)
+#     plt.imshow(img)
+#     plt.title("LeNet got {} Yuan".format(rmb))
+#     plt.show()
+#     plt.pause(0.5)
+#     plt.close()
+
