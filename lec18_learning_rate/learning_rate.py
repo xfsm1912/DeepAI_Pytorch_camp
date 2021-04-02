@@ -38,8 +38,8 @@ if flag:
 
 
 # ------------------------------ gradient descent ------------------------------
-# flag = 0
-flag = 1
+flag = 0
+# flag = 1
 if flag:
     iter_rec, loss_rec, x_rec = [], [], []
 
@@ -56,20 +56,23 @@ if flag:
 
         x_rec.append(x.item())
 
-        x.data.sub_(lr * x.grad)    # x -= x.grad  数学表达式意义:  x = x - x.grad    # 0.5 0.2 0.1 0.125
+        x.data.sub_(lr * x.grad)    # x -= x.grad,  x = x - x.grad    # 0.5 0.2 0.1 0.125
         x.grad.zero_()
 
         iter_rec.append(i)
         loss_rec.append(y)
 
+    # plot the loss decreasing as iteration steps
     plt.subplot(121).plot(iter_rec, loss_rec, '-ro')
     plt.xlabel("Iteration")
     plt.ylabel("Loss value")
 
     x_t = torch.linspace(-3, 3, 100)
     y = func(x_t)
+    # plot the math expression curve
     plt.subplot(122).plot(x_t.numpy(), y.numpy(), label="y = 4*x^2")
     plt.grid()
+    # plot the loss decreased as x.
     y_rec = [func(torch.tensor(i)).item() for i in x_rec]
     plt.subplot(122).plot(x_rec, y_rec, '-ro')
     plt.legend()
@@ -77,15 +80,15 @@ if flag:
 
 # ------------------------------ multi learning rate ------------------------------
 
-flag = 0
-# flag = 1
+# flag = 0
+flag = 1
 if flag:
     iteration = 100
     num_lr = 10
     lr_min, lr_max = 0.01, 0.2  # .5 .3 .2
 
     lr_list = np.linspace(lr_min, lr_max, num=num_lr).tolist()
-    loss_rec = [[] for l in range(len(lr_list))]
+    loss_rec = [[] for _ in range(len(lr_list))]
     iter_rec = list()
 
     for i, lr in enumerate(lr_list):

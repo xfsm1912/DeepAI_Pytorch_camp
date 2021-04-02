@@ -25,6 +25,7 @@ if flag:
     # print(w.grad)
     y.backward(retain_graph=False)
     print(w.grad)
+    print()
 
 
 # 2. grad_tensors
@@ -68,8 +69,8 @@ if flag:
 
 # tip 1
 # gradient is not cleared automatically, so be careful about the clearing up
-# flag = True
-flag = False
+flag = True
+# flag = False
 if flag:
     w = torch.tensor([1.], requires_grad=True)
     x = torch.tensor([2.], requires_grad=True)
@@ -119,8 +120,8 @@ if flag:
     a += torch.ones((1, ))
     print(id(a), a)
 
-flag = True
-# flag = False
+# flag = True
+flag = False
 if flag:
 
     w = torch.tensor([1.], requires_grad=True)

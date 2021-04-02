@@ -124,7 +124,7 @@ for epoch in range(MAX_EPOCH):
                 epoch, MAX_EPOCH, i+1, len(train_loader), loss_mean, correct / total))
             loss_mean = 0.
 
-    scheduler.step()  # 更新学习率
+    scheduler.step()  # update learning rate
 
     # validate the model in every epoch
     if (epoch+1) % val_interval == 0:
