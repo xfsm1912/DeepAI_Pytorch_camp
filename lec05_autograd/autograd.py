@@ -69,8 +69,8 @@ if flag:
 
 # tip 1
 # gradient is not cleared automatically, so be careful about the clearing up
-flag = True
-# flag = False
+# flag = True
+flag = False
 if flag:
     w = torch.tensor([1.], requires_grad=True)
     x = torch.tensor([2.], requires_grad=True)
@@ -91,8 +91,8 @@ if flag:
 
 # tip 2
 # The nodes relied on leaf nodes set up requires_grad=True by default
-# flag = True
-flag = False
+flag = True
+# flag = False
 if flag:
     w = torch.tensor([1.], requires_grad=True)
     x = torch.tensor([2.], requires_grad=True)
@@ -102,6 +102,7 @@ if flag:
     y = torch.mul(a, b)
 
     print(a.requires_grad, b.requires_grad, y.requires_grad)
+    print(f"a grad:{a.grad}")
 
 # tip 3
 # The leaf node cannot implement in-place

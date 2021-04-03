@@ -6,6 +6,7 @@
 @brief      : tensorboard method 2
 """
 import os
+import sys
 import torch
 import time
 import torchvision.models as models
@@ -13,13 +14,12 @@ import torchvision.transforms as transforms
 import torchvision.utils as utils
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
-
-import sys
-hello_pytorch_DIR = os.path.abspath(os.path.dirname(__file__)+os.path.sep+"..")
-sys.path.append(hello_pytorch_DIR)
 from tools.my_dataset import RMBDataset
 from tools.common_tools import set_seed
 from model.lenet import LeNet
+
+hello_pytorch_DIR = os.path.abspath(os.path.dirname(__file__)+os.path.sep+"..")
+sys.path.append(hello_pytorch_DIR)
 
 
 # after event files created, run "tensorboard --logdir=./" in the terminal to visualize the data.
