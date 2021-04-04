@@ -1,36 +1,31 @@
-# -*- coding: utf-8 -*-
+# -*- coding:utf-8 -*-
 """
-# @file name  : train_lenet.py
-# @author     : Jianhua Ma
-# @date       : 20210329
-# @brief      : RMB classification model training
+@file name  : bn_application.py
+# @author   : TingsongYu https://github.com/TingsongYu
+@date       : 2019-11-01
+@brief      : nn.BatchNorm使用
 """
-
 import os
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
+import torch.nn.functional as F
 import torch.optim as optim
+import torchvision.transforms as transforms
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader
 from matplotlib import pyplot as plt
+
 import sys
-from model.lenet import LeNet
+from model.lenet import LeNet, LeNet_bn
 from tools.my_dataset import RMBDataset
 from tools.common_tools import set_seed
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-path_lenet = os.path.join(BASE_DIR, "..", "model", "lenet.py")
-path_tools = os.path.join(BASE_DIR, "..", "tools", "common_tools.py")
-
-assert os.path.exists(path_lenet), f"{path_lenet} not exist, please place lenet.py in the {os.path.dirname(path_lenet)}"
-assert os.path.exists(path_tools), f"{path_tools} not exist, please place common_tools.py in the {os.path.dirname(path_tools)}"
 
 hello_pytorch_DIR = os.path.abspath(os.path.dirname(__file__)+os.path.sep+"..")
 sys.path.append(hello_pytorch_DIR)
 
-set_seed()
+
+set_seed(1)
 rmb_label = {"1": 0, "100": 1}
 
 MAX_EPOCH = 10
@@ -38,9 +33,9 @@ BATCH_SIZE = 16
 LR = 0.01
 log_interval = 10
 val_interval = 1
-MOMENTUM = 0.9
 
 # step 1/5: data preparation
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 split_dir = os.path.join(BASE_DIR, "..", "data", "rmb_split")
 if not os.path.exists(split_dir):
     raise Exception(r"data {} not exist, go back to split_dataset.py to generate data".format(split_dir))
@@ -50,10 +45,10 @@ valid_dir = os.path.join(split_dir, "valid")
 norm_mean = [0.485, 0.456, 0.406]
 norm_std = [0.229, 0.224, 0.225]
 
-# compose multiple image transform
 train_transform = transforms.Compose([
     transforms.Resize((32, 32)),
     transforms.RandomCrop(32, padding=4),
+    transforms.RandomGrayscale(p=0.8),
     transforms.ToTensor(),
     transforms.Normalize(norm_mean, norm_std),
 ])
@@ -73,28 +68,35 @@ train_loader = DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=Tru
 valid_loader = DataLoader(dataset=valid_data, batch_size=BATCH_SIZE)
 
 # step 2/5: model
-net = LeNet(classes=2)
-net.initialize_weights()
 
-# step 3/5: loss function
+net = LeNet_bn(classes=2)
+# net = LeNet(classes=2)
+# net.initialize_weights()
+
+# step 3/5
 criterion = nn.CrossEntropyLoss()
 
-# step 4/5: optimizer
-# select optimizer
-optimizer = optim.SGD(net.parameters(), lr=LR, momentum=MOMENTUM)
-# set up the learning rate reducing strategy
+# step 4/5 optimizer
+optimizer = optim.SGD(net.parameters(), lr=LR, momentum=0.9)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
 # step 5/5: training
 train_curve, valid_curve = [], []
 
+iter_count = 0
+# SummaryWriter
+writer = SummaryWriter(comment='test_your_comment', filename_suffix="_test_your_filename_suffix")
+
 for epoch in range(MAX_EPOCH):
+
     loss_mean = 0.
     correct = 0.
     total = 0.
 
     net.train()
     for i, data in enumerate(train_loader):
+
+        iter_count += 1
 
         # forward
         inputs, labels = data
@@ -123,9 +125,14 @@ for epoch in range(MAX_EPOCH):
                 epoch, MAX_EPOCH, i+1, len(train_loader), loss_mean, correct / total))
             loss_mean = 0.
 
-    scheduler.step()  # update learning rate
+        # record data
+        writer.add_scalars("Loss", {"Train": loss.item()}, iter_count)
+        writer.add_scalars("Accuracy", {"Train": correct / total}, iter_count)
 
-    # validate the model in every epoch
+    # update the learning rate
+    scheduler.step()
+
+    # validate the model
     if (epoch+1) % val_interval == 0:
 
         correct_val = 0.
@@ -142,7 +149,6 @@ for epoch in range(MAX_EPOCH):
                 total_val += labels.size(0)
                 correct_val += (predicted == labels).squeeze().sum().numpy()
 
-                # every batch's valid mean loss
                 loss_val += loss.item()
 
             # every epoch's valid mean loss
@@ -152,6 +158,9 @@ for epoch in range(MAX_EPOCH):
             print("Valid:\t Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f} Acc:{:.2%}".format(
                 epoch, MAX_EPOCH, j+1, len(valid_loader), loss_val_epoch, correct_val / total_val))
 
+            # 记录数据，保存于event file
+            writer.add_scalars("Loss", {"Valid": loss.item()}, iter_count)
+            writer.add_scalars("Accuracy", {"Valid": correct / total}, iter_count)
 
 train_x = range(len(train_curve))
 train_y = train_curve
@@ -170,20 +179,3 @@ plt.legend(loc='upper right')
 plt.ylabel('loss value')
 plt.xlabel('Iteration')
 plt.show()
-
-# ============================ inference ============================
-
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# test_dir = os.path.join(BASE_DIR, "test_data")
-#
-# test_data = RMBDataset(data_dir=test_dir, transform=valid_transform)
-# valid_loader = DataLoader(dataset=test_data, batch_size=1)
-#
-# for i, data in enumerate(valid_loader):
-#     # forward
-#     inputs, labels = data
-#     outputs = net(inputs)
-#     _, predicted = torch.max(outputs.data, 1)
-#
-#     rmb = 1 if predicted.numpy()[0] == 0 else 100
-#     print("model predict {} yuan".format(rmb))

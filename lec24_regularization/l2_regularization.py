@@ -17,7 +17,7 @@ hello_pytorch_DIR = os.path.abspath(os.path.dirname(__file__)+os.path.sep+".."+o
 sys.path.append(hello_pytorch_DIR)
 
 
-set_seed(1)  # 设置随机种子
+set_seed(1)
 n_hidden = 200
 max_iter = 2000
 disp_interval = 200

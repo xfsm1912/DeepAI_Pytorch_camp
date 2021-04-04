@@ -1,46 +1,43 @@
 # -*- coding: utf-8 -*-
 """
-# @file name  : train_lenet.py
+# @file name  : save_checkpoint.py
 # @author     : Jianhua Ma
-# @date       : 20210329
-# @brief      : RMB classification model training
+# @date       : 20210403
+# @brief      : simulate the accident break
 """
-
 import os
+import random
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torch.optim as optim
+from PIL import Image
 from matplotlib import pyplot as plt
 import sys
+
 from model.lenet import LeNet
 from tools.my_dataset import RMBDataset
 from tools.common_tools import set_seed
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-path_lenet = os.path.join(BASE_DIR, "..", "model", "lenet.py")
-path_tools = os.path.join(BASE_DIR, "..", "tools", "common_tools.py")
-
-assert os.path.exists(path_lenet), f"{path_lenet} not exist, please place lenet.py in the {os.path.dirname(path_lenet)}"
-assert os.path.exists(path_tools), f"{path_tools} not exist, please place common_tools.py in the {os.path.dirname(path_tools)}"
+import torchvision
 
 hello_pytorch_DIR = os.path.abspath(os.path.dirname(__file__)+os.path.sep+"..")
 sys.path.append(hello_pytorch_DIR)
 
-set_seed()
+set_seed(1)
 rmb_label = {"1": 0, "100": 1}
 
+checkpoint_interval = 5
 MAX_EPOCH = 10
 BATCH_SIZE = 16
 LR = 0.01
 log_interval = 10
 val_interval = 1
-MOMENTUM = 0.9
+
 
 # step 1/5: data preparation
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 split_dir = os.path.join(BASE_DIR, "..", "data", "rmb_split")
 if not os.path.exists(split_dir):
     raise Exception(r"data {} not exist, go back to split_dataset.py to generate data".format(split_dir))
@@ -50,10 +47,10 @@ valid_dir = os.path.join(split_dir, "valid")
 norm_mean = [0.485, 0.456, 0.406]
 norm_std = [0.229, 0.224, 0.225]
 
-# compose multiple image transform
 train_transform = transforms.Compose([
     transforms.Resize((32, 32)),
     transforms.RandomCrop(32, padding=4),
+    transforms.RandomGrayscale(p=0.8),
     transforms.ToTensor(),
     transforms.Normalize(norm_mean, norm_std),
 ])
@@ -80,15 +77,24 @@ net.initialize_weights()
 criterion = nn.CrossEntropyLoss()
 
 # step 4/5: optimizer
-# select optimizer
-optimizer = optim.SGD(net.parameters(), lr=LR, momentum=MOMENTUM)
-# set up the learning rate reducing strategy
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+optimizer = optim.SGD(net.parameters(), lr=LR, momentum=0.9)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.1)
+
+# step 4.5/5: reload the model from last checkpoint
+path_checkpoint = "./checkpoint_4_epoch.pkl"
+checkpoint = torch.load(path_checkpoint)
+
+net.load_state_dict(checkpoint["model_state_dict"])
+optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+start_epoch = checkpoint["epoch"]
+
+scheduler.last_epoch = start_epoch
 
 # step 5/5: training
 train_curve, valid_curve = [], []
 
 for epoch in range(MAX_EPOCH):
+
     loss_mean = 0.
     correct = 0.
     total = 0.
@@ -105,27 +111,36 @@ for epoch in range(MAX_EPOCH):
         loss = criterion(outputs, labels)
         loss.backward()
 
-        # update weights
         optimizer.step()
 
-        # count classification prediction
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).squeeze().sum().numpy()
 
-        # append every batch's mean loss, loss.item()
         loss_mean += loss.item()
         train_curve.append(loss.item())
-        # print training information in every 10 batch steps, loss_mean is the mean loss in 10 batches
         if (i+1) % log_interval == 0:
             loss_mean = loss_mean / log_interval
             print("Training:Epoch[{:0>3}/{:0>3}] Iteration[{:0>3}/{:0>3}] Loss: {:.4f} Acc:{:.2%}".format(
                 epoch, MAX_EPOCH, i+1, len(train_loader), loss_mean, correct / total))
             loss_mean = 0.
 
-    scheduler.step()  # update learning rate
+    scheduler.step()
 
-    # validate the model in every epoch
+    if (epoch+1) % checkpoint_interval == 0:
+
+        checkpoint = {"model_state_dict": net.state_dict(),
+                      "optimizer_state_dict": optimizer.state_dict(),
+                      "loss": loss,
+                      "epoch": epoch}
+        path_checkpoint = f"./checkpoint_{epoch}_epoch.pkl"
+        torch.save(checkpoint, path_checkpoint)
+
+    # if epoch > 5:
+    #     print("训练意外中断...")
+    #     break
+
+    # validate the model
     if (epoch+1) % val_interval == 0:
 
         correct_val = 0.
@@ -142,7 +157,6 @@ for epoch in range(MAX_EPOCH):
                 total_val += labels.size(0)
                 correct_val += (predicted == labels).squeeze().sum().numpy()
 
-                # every batch's valid mean loss
                 loss_val += loss.item()
 
             # every epoch's valid mean loss
@@ -157,7 +171,6 @@ train_x = range(len(train_curve))
 train_y = train_curve
 
 train_iters = len(train_loader)
-
 # since train_curve record every batch's loss, but train_curve recoder every epoch's loss
 # so we need to amplify and interpolate more points between the valid point
 valid_x = np.arange(1, len(valid_curve)+1) * train_iters * val_interval
@@ -170,20 +183,3 @@ plt.legend(loc='upper right')
 plt.ylabel('loss value')
 plt.xlabel('Iteration')
 plt.show()
-
-# ============================ inference ============================
-
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# test_dir = os.path.join(BASE_DIR, "test_data")
-#
-# test_data = RMBDataset(data_dir=test_dir, transform=valid_transform)
-# valid_loader = DataLoader(dataset=test_data, batch_size=1)
-#
-# for i, data in enumerate(valid_loader):
-#     # forward
-#     inputs, labels = data
-#     outputs = net(inputs)
-#     _, predicted = torch.max(outputs.data, 1)
-#
-#     rmb = 1 if predicted.numpy()[0] == 0 else 100
-#     print("model predict {} yuan".format(rmb))
