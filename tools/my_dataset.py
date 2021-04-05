@@ -103,3 +103,102 @@ class AntsDataset(Dataset):
         return data_info
 
 
+class PortraitDataset(Dataset):
+    def __init__(self, data_dir, transform=None, in_size = 224):
+        super(PortraitDataset, self).__init__()
+        self.data_dir = data_dir
+        self.transform = transform
+        self.label_path_list = list()
+        self.in_size = in_size
+
+        # 获取mask的path
+        self._get_img_path()
+
+    def __getitem__(self, index):
+
+        path_label = self.label_path_list[index]
+        path_img = path_label[:-10] + ".png"
+
+        img_pil = Image.open(path_img).convert('RGB')
+        img_pil = img_pil.resize((self.in_size, self.in_size), Image.BILINEAR)
+        img_hwc = np.array(img_pil)
+        img_chw = img_hwc.transpose((2, 0, 1))
+
+        label_pil = Image.open(path_label).convert('L')
+        label_pil = label_pil.resize((self.in_size, self.in_size), Image.NEAREST)
+        label_hw = np.array(label_pil)
+        label_chw = label_hw[np.newaxis, :, :]
+        label_hw[label_hw != 0] = 1
+
+        if self.transform is not None:
+            img_chw_tensor = torch.from_numpy(self.transform(img_chw.numpy())).float()
+            label_chw_tensor = torch.from_numpy(self.transform(label_chw.numpy())).float()
+        else:
+            img_chw_tensor = torch.from_numpy(img_chw).float()
+            label_chw_tensor = torch.from_numpy(label_chw).float()
+
+        return img_chw_tensor, label_chw_tensor
+
+    def __len__(self):
+        return len(self.label_path_list)
+
+    def _get_img_path(self):
+        file_list = os.listdir(self.data_dir)
+        file_list = list(filter(lambda x: x.endswith("_matte.png"), file_list))
+        path_list = [os.path.join(self.data_dir, name) for name in file_list]
+        random.shuffle(path_list)
+        if len(path_list) == 0:
+            raise Exception("\ndata_dir:{} is a empty dir! Please checkout your path to images!".format(self.data_dir))
+        self.label_path_list = path_list
+
+
+class PennFudanDataset(Dataset):
+    def __init__(self, data_dir, transforms):
+
+        self.data_dir = data_dir
+        self.transforms = transforms
+        self.img_dir = os.path.join(data_dir, "PNGImages")
+        self.txt_dir = os.path.join(data_dir, "Annotation")
+        self.names = [name[:-4] for name in list(filter(lambda x: x.endswith(".png"), os.listdir(self.img_dir)))]
+
+    def __getitem__(self, index):
+        """
+        返回img和target
+        :param idx:
+        :return:
+        """
+
+        name = self.names[index]
+        path_img = os.path.join(self.img_dir, name + ".png")
+        path_txt = os.path.join(self.txt_dir, name + ".txt")
+
+        # load img
+        img = Image.open(path_img).convert("RGB")
+
+        # load boxes and label
+        f = open(path_txt, "r")
+        import re
+        points = [re.findall(r"\d+", line) for line in f.readlines() if "Xmin" in line]
+        boxes_list = list()
+        for point in points:
+            box = [int(p) for p in point]
+            boxes_list.append(box[-4:])
+        boxes = torch.tensor(boxes_list, dtype=torch.float)
+        labels = torch.ones((boxes.shape[0],), dtype=torch.long)
+
+        # iscrowd = torch.zeros((num_objs,), dtype=torch.int64)
+        target = {}
+        target["boxes"] = boxes
+        target["labels"] = labels
+        # target["iscrowd"] = iscrowd
+
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+
+        return img, target
+
+    def __len__(self):
+        if len(self.names) == 0:
+            raise Exception("\ndata_dir:{} is a empty dir! Please checkout your path to images!".format(self.data_dir))
+        return len(self.names)
+

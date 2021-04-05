@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-# @file name  : save_checkpoint.py
+# @file name  : 3_save_checkpoint.py
 # @author     : Jianhua Ma
 # @date       : 20210403
 # @brief      : simulate the accident break
@@ -80,6 +80,16 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=LR, momentum=0.9)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.1)
 
+# step 4.5/5: reload the model from last checkpoint
+path_checkpoint = "./checkpoint_4_epoch.pkl"
+checkpoint = torch.load(path_checkpoint)
+
+net.load_state_dict(checkpoint["model_state_dict"])
+optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+start_epoch = checkpoint["epoch"]
+
+scheduler.last_epoch = start_epoch
+
 # step 5/5: training
 train_curve, valid_curve = [], []
 
@@ -121,13 +131,14 @@ for epoch in range(MAX_EPOCH):
 
         checkpoint = {"model_state_dict": net.state_dict(),
                       "optimizer_state_dict": optimizer.state_dict(),
+                      "loss": loss,
                       "epoch": epoch}
         path_checkpoint = f"./checkpoint_{epoch}_epoch.pkl"
         torch.save(checkpoint, path_checkpoint)
 
-    if epoch > 5:
-        print("训练意外中断...")
-        break
+    # if epoch > 5:
+    #     print("训练意外中断...")
+    #     break
 
     # validate the model
     if (epoch+1) % val_interval == 0:

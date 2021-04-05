@@ -60,8 +60,8 @@ if flag:
 
 
 # example 2: make_grid, make grid figure
-# flag = True
-flag = False
+flag = True
+# flag = False
 if flag:
     writer = SummaryWriter(comment='test_your_comment', filename_suffix="_test_your_filename_suffix")
 
@@ -72,7 +72,13 @@ if flag:
     train_loader = DataLoader(dataset=train_data, batch_size=16, shuffle=True)
 
     # next(iterator), returns the next item from the iterator.
-    data_batch, label_batch = next(iter(train_loader))
+    # here we try to get a single batch from DataLoader
+    train_loader_iter = iter(train_loader)
+    data_batch, label_batch = next(train_loader_iter)
+
+    # do not combine the two commands as:
+    # data_batch, label_batch = next(iter(train_loader))
+    # you actually create a new instance of dataloader iterator at each call! Memory is too much
 
     img_grid = utils.make_grid(tensor=data_batch,
                                nrow=4,
@@ -87,7 +93,7 @@ if flag:
     writer.close()
 
 # example 5: add_graph, visualize module graph
-flag = True
+# flag = True
 # flag = False
 if flag:
 

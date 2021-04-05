@@ -94,8 +94,9 @@ for epoch in range(MAX_EPOCH):
     total = 0.
 
     net.train()
+    # iteration over all the batches in one epoch
     for i, data in enumerate(train_loader):
-
+        print(i)
         # forward
         inputs, labels = data
         outputs = net(inputs)

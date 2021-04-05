@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-# @file name  : model_load.py
+# @file name  : 2_model_load.py
 # @author     : Jianhua Ma
 # @date       : 20210403
 # @brief      : model loading and saving
@@ -11,7 +11,7 @@ import torch.nn as nn
 
 from model.lenet import LeNet2
 
-# Before run this script, run the model_save.py first
+# Before run this script, run the 1_model_save.py first
 # example 1: load net
 # flag = True
 flag = False

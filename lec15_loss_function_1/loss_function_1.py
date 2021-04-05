@@ -64,7 +64,7 @@ flag = 0
 # flag = 1
 if flag:
     # def loss function
-    # for different sample's loss, if class 0 * 1, elif class 1 * 2
+    # for different sample's loss, if class 0: * 1, elif class 1: * 2
     # weights = torch.tensor([1, 2], dtype=torch.float)
     weights = torch.tensor([0.7, 0.3], dtype=torch.float)
 
