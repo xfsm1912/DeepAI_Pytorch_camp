@@ -202,3 +202,23 @@ class PennFudanDataset(Dataset):
             raise Exception("\ndata_dir:{} is a empty dir! Please checkout your path to images!".format(self.data_dir))
         return len(self.names)
 
+
+class CelebADataset(Dataset):
+    def __init__(self, data_dir, transforms):
+        self.data_dir = data_dir
+        self.transform = transforms
+        self.img_names = [name for name in list(filter(lambda x: x.endswith(".jpg"), os.listdir(self.data_dir)))]
+
+    def __getitem__(self, index):
+        path_img = os.path.join(self.data_dir, self.img_names[index])
+        img = Image.open(path_img).convert("RGB")
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        return img
+
+    def __len__(self):
+        if len(self.img_names) == 0:
+            raise Exception(f"\ndata_dir:{self.data_dir} is a empty dir! Please checkout your path to images!")
+        return len(self.img_names)

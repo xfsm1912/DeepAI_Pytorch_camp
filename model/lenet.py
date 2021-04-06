@@ -2,7 +2,7 @@
 # @file name  : lenet.py
 # @author     : yts3221@126.com
 # @date       : 2019-08-21 10:08:00
-# @brief      : lenet模型定义
+# @brief      : lenet models
 """
 
 import torch.nn as nn

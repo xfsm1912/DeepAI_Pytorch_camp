@@ -3,7 +3,7 @@
 # @file name  : fasterrcnn_train.py
 # @author     : Jianhua Ma
 # @date       : 20210404
-# @brief      : training faster rcnn
+# @brief      : training faster rcnn (better run in GPU)
 """
 
 import os
