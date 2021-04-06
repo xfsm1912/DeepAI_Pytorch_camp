@@ -1,2 +1,4 @@
-# DeepAI_Pytorch_camp![Pytorch](/Users/jianhuama/Dropbox/deepshareAI/DeepAI_Pytorch_camp/Pytorch.png)
+# DeepAI_Pytorch_camp
+
+![alt text](https://github.com/xfsm1912/DeepAI_Pytorch_camp/blob/develop/Pytorch.png)
 
