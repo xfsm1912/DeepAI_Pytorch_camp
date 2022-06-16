@@ -4,9 +4,12 @@
 # @date       : 2019-08-21 10:08:00
 # @brief      : lenet models
 """
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
+
+from pytorch_lightning import LightningModule
 
 
 class LeNet(nn.Module):
@@ -119,3 +122,43 @@ class LeNet_bn(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight.data, 0, 1)
                 m.bias.data.zero_()
+
+
+class LeNet_PLModule(LightningModule):
+    def __init__(self, model, loss_func, lr):
+        super().__init__()
+
+        self.save_hyperparameters()
+        self.model = model
+        self.lr = lr
+        self.loss_func = loss_func
+
+    def forward(self, x):
+        out = self.model(x) if x is not None else None
+        return out
+
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        lr_scheduler = {"scheduler": optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)}
+        return [optimizer], [lr_scheduler]
+
+    def training_step(self, train_batch, batch_idx):
+        img, label = train_batch
+        output = self(img)
+        loss = self.loss_func(output, label)
+
+        self.log(f'train_loss', loss, on_epoch=True, on_step=True)
+
+        return {'loss': loss}
+
+    def validation_step(self, val_batch, batch_idx):
+        img, label = val_batch
+        output = self(img)
+        loss = self.loss_func(output, label)
+
+        self.log(f'valid_loss', loss, on_epoch=True, prog_bar=True)
+        return {'x': loss}
+
+    def validation_epoch_end(self, outputs):
+        torch.stack([x['x'] for x in outputs]).mean()
+

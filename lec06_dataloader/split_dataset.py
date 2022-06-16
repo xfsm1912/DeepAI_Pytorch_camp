@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def makedir(new_dir):
     if not os.path.exists(new_dir):
         os.makedirs(new_dir)
-    print("the splitted data will be generated in {}\n".format(out_dir))
+    print("the split data will be generated in {}\n".format(new_dir))
 
 
 if __name__ == "__main__":

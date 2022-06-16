@@ -5,13 +5,16 @@
 # @date       : 20210329
 # @brief      : define different dataloader class for different dataset
 """
-
+from typing import Optional
 import numpy as np
 import torch
 import os
 import random
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as transforms
+
+from pytorch_lightning import LightningDataModule
 
 random.seed(1)
 rmb_label = {"1": 0, "100": 1}
@@ -63,6 +66,56 @@ class RMBDataset(Dataset):
                     data_info.append((path_img, int(label)))
 
         return data_info
+
+
+class RMBDataModule(LightningDataModule):
+    def __init__(
+            self,
+            train_dir: str,
+            valid_dir: str,
+            image_size=32,
+            batch_size=16,
+            num_workers=4,
+            padding=4,
+            norm_mean=None,
+            norm_std=None
+    ):
+        super().__init__()
+
+
+        if norm_std is None:
+            norm_std = [0.229, 0.224, 0.225]
+        if norm_mean is None:
+            norm_mean = [0.485, 0.456, 0.406]
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.train_dir = train_dir
+        self.valid_dir = valid_dir
+
+        # compose multiple image transform
+        self.train_transform = transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.RandomCrop(image_size, padding=padding),
+            transforms.ToTensor(),
+            transforms.Normalize(norm_mean, norm_std),
+        ])
+
+        self.valid_transform = transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(norm_mean, norm_std),
+        ])
+
+    def setup(self, stage: Optional[str] = None):
+        self.train_dataset = RMBDataset(data_dir=self.train_dir, transform=self.train_transform)
+        self.valid_dataset = RMBDataset(data_dir=self.valid_dir, transform=self.valid_transform)
+
+    def train_dataloader(self):
+        return DataLoader(dataset=self.train_dataset, batch_size=self.batch_size, shuffle=True)
+
+    def val_dataloader(self):
+        return DataLoader(dataset=self.valid_dataset, batch_size=self.batch_size)
+
 
 
 class AntsDataset(Dataset):
